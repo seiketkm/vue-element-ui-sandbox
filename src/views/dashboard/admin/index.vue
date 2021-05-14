@@ -1,12 +1,15 @@
 <template>
   <div class="dashboard-editor-container">
-    <panel-group @handleSetLineChartData="handleSetLineChartData" />
     <el-row>
       <el-col :xs="8" :sm="8" :lg="8">
         <div class="card-panel">
           <div class="card-panel-description">
             <div class="card-panel-text">
-              <el-date-picker v-model="from_date" type="datetime" placeholder="From" />
+              <el-date-picker
+                v-model="from_date"
+                type="datetime"
+                placeholder="From"
+              />
             </div>
           </div>
         </div>
@@ -14,10 +17,30 @@
       <el-col :xs="8" :sm="8" :lg="8">
         <div class="card-panel">
           <div class="card-panel-description">
-            <el-date-picker v-model="to_date" type="datetime" placeholder="To" />
+            <el-date-picker
+              v-model="to_date"
+              type="datetime"
+              placeholder="To"
+            />
           </div>
         </div>
       </el-col>
+      <el-input v-model="apikey" />
+      <el-button @click="fetch_data" />
+      <!-- <el-form
+        action="https://api.data.iotbase.in/idm/oauth2/token"
+        method="post"
+        @submit.prevent="login"
+      >
+        <el-input type="text" name="username" value="admin@keyrock" />
+        <el-input
+          type="text"
+          name="password"
+          value="password_of_keyrok_admin"
+        />
+        <el-input type="hidden" name="grant_type" value="password" />
+        <el-input type="submit" value="login" />
+      </el-form> -->
     </el-row>
 
     <el-row style="background: #fff; padding: 16px 16px 0; margin-bottom: 32px">
@@ -27,63 +50,15 @@
 </template>
 
 <script>
-import PanelGroup from './components/PanelGroup'
+import axios from 'axios'
+// import PanelGroup from './components/PanelGroup'
 import LineChart from './components/LineChart'
-
-const lineChartData = {
-  weight: {
-    expectedData: [
-      100,
-      120,
-      161,
-      134,
-      105,
-      160,
-      165,
-      100,
-      120,
-      161,
-      134,
-      105,
-      160,
-      165
-    ],
-    actualData: [
-      120,
-      82,
-      91,
-      154,
-      162,
-      140,
-      145,
-      120,
-      82,
-      91,
-      154,
-      162,
-      140,
-      145
-    ]
-  },
-  messages: {
-    expectedData: [200, 192, 120, 144, 160, 130, 140],
-    actualData: [180, 160, 151, 106, 145, 150, 130]
-  },
-  purchases: {
-    expectedData: [80, 100, 121, 104, 105, 90, 100],
-    actualData: [120, 90, 100, 138, 142, 130, 130]
-  },
-  shoppings: {
-    expectedData: [130, 140, 141, 142, 145, 150, 160],
-    actualData: [120, 82, 91, 154, 162, 140, 130]
-  }
-}
 
 export default {
   name: 'DashboardAdmin',
   components: {
     // GithubCorner,
-    PanelGroup,
+    // PanelGroup,
     LineChart
     // RaddarChart,
     // PieChart,
@@ -94,14 +69,30 @@ export default {
   },
   data() {
     return {
-      lineChartData: lineChartData.weight,
+      lineChartData: {},
       from_date: null,
-      to_date: null
+      to_date: null,
+      apikey: '',
+      contextResponses: []
     }
   },
   methods: {
-    handleSetLineChartData(type) {
-      this.lineChartData = lineChartData[type]
+    fetch_data: async function() {
+      const { status, data } = await axios.get(
+        'https://api.data.iotbase.in/comet/STH/v1/contextEntities/type/Value/id/urn:ngsi-ld:Value:001/attributes/Value?lastN=3',
+        {
+          headers: {
+            'X-Auth-Token': this.apikey,
+            'fiware-service': 'example',
+            'fiware-servicepath': '/',
+            Accept: 'application/json'
+          }
+        }
+      )
+      console.log(status)
+      console.log(data)
+      this.contextResponses = data.contextResponses
+      this.lineChartData = data.contextResponses[0].contextElement
     }
   }
 }
